@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>iiko.biz — Автопилоты удержания</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #e8e8e8;
+      color: #333;
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    /* ── TOP NAV ── */
+    .topnav {
+      background: #1867B8;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+    }
+    .topnav-logo {
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-right: 24px;
+      padding-right: 24px;
+      border-right: 1px solid rgba(255,255,255,0.25);
+    }
+    .topnav-item {
+      color: rgba(255,255,255,0.75);
+      padding: 0 14px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 13px;
+      border-bottom: 3px solid transparent;
+    }
+    .topnav-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .topnav-item.active { color: #fff; border-bottom-color: #fff; background: rgba(255,255,255,0.1); }
+    .topnav-right { margin-left: auto; color: rgba(255,255,255,0.7); font-size: 12px; display: flex; align-items: center; gap: 14px; }
+
+    /* ── SECTION BAR ── */
+    .section-bar {
+      background: #1867B8;
+      padding: 6px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+    .section-bar-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .section-sep { color: rgba(255,255,255,0.4); }
+    .section-info { font-size: 12px; color: rgba(255,255,255,0.75); margin-left: auto; }
+
+    /* ── TABS ── */
+    .tabs-bar {
+      background: #fff;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      padding: 0 18px;
+    }
+    .tab-btn {
+      padding: 9px 18px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #555;
+      border: none;
+      background: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: #1867B8; }
+    .tab-btn.active { color: #1867B8; border-bottom-color: #1867B8; font-weight: 600; }
+
+    /* ── CONTENT ── */
+    .content { padding: 14px 18px; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── PANEL ── */
+    .panel { background: #fff; border: 1px solid #ccc; margin-bottom: 14px; }
+    .panel-head {
+      background: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+      padding: 7px 12px;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #444;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-body { padding: 14px; }
+
+    /* ── TOOLBAR ROW ── */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .toolbar-left { display: flex; gap: 8px; align-items: center; }
+    .toolbar-title { font-size: 13px; color: #555; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 5px 14px;
+      font-size: 13px;
+      border-radius: 2px;
+      cursor: pointer;
+      border: 1px solid;
+    }
+    .btn-create { background: #1867B8; border-color: #145299; color: #fff; font-weight: 600; }
+    .btn-create:hover { background: #145299; }
+    .btn-save { background: #4caf50; border-color: #388e3c; color: #fff; font-weight: 600; }
+    .btn-save:hover { background: #43a047; }
+    .btn-cancel { background: #f5f5f5; border-color: #bbb; color: #555; }
+    .btn-cancel:hover { background: #eee; }
+    .btn-edit { background: #fff; border-color: #bbb; color: #1867B8; font-size: 12px; padding: 3px 10px; }
+    .btn-edit:hover { background: #e3f0ff; }
+    .btn-back { background: none; border: none; color: #1867B8; font-size: 13px; cursor: pointer; padding: 0; margin-bottom: 10px; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-back:hover { text-decoration: underline; }
+
+    /* ── AUTOPILOTS LIST TABLE ── */
+    .list-table { width: 100%; border-collapse: collapse; }
+    .list-table th {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 7px 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .list-table td {
+      border: 1px solid #ddd;
+      padding: 9px 12px;
+      vertical-align: middle;
+    }
+    .list-table tbody tr:hover td { background: #f7f7f7; }
+    .ap-name-link { color: #1867B8; cursor: pointer; font-weight: 600; }
+    .ap-name-link:hover { text-decoration: underline; }
+
+    /* ── STATUS BADGE ── */
+    .status-on  { color: #2e7d32; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .status-off { color: #888; display: flex; align-items: center; gap: 5px; }
+    .status-dot-on  { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; flex-shrink: 0; }
+    .status-dot-off { width: 8px; height: 8px; border-radius: 50%; background: #bbb; flex-shrink: 0; }
+
+    /* ── TOGGLE ── */
+    .toggle {
+      width: 40px; height: 22px;
+      border-radius: 11px;
+      background: #bbb;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .toggle.on { background: #4caf50; }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: left 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .toggle.on::after { left: 21px; }
+
+    /* ── CHANNEL BADGES ── */
+    .ch-row { display: flex; align-items: center; gap: 5px; }
+    .ch { border: 1px solid; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 600; }
+    .ch-push { border-color: #1565C0; color: #1565C0; background: #e3f2fd; }
+    .ch-tg   { border-color: #1a6e30; color: #1a6e30; background: #e8f5e9; }
+    .ch-sms  { border-color: #6a1b9a; color: #6a1b9a; background: #f3e5f5; }
+    .ch-arrow { color: #aaa; font-size: 11px; }
+
+    /* ── RULE TABLE (condition constructor style) ── */
+    .rule-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .rule-table th {
+      background: #e8e0d0;
+      border: 1px solid #c4b49a;
+      padding: 7px 12px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+    }
+    .rule-table td {
+      border: 1px solid #c4b49a;
+      padding: 10px 12px;
+      background: #fff;
+      vertical-align: middle;
+    }
+    .rule-cell {
+      background: #f9f7f4;
+      border: 1px solid #d0c8b8;
+      border-radius: 2px;
+      padding: 7px 10px;
+      font-size: 13px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .rule-icon {
+      width: 22px; height: 22px;
+      border: 1px solid #bbb;
+      background: #f0f0f0;
+      border-radius: 2px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      cursor: default;
+      color: #777;
+      flex-shrink: 0;
+    }
+    .rule-icon-row { display: flex; gap: 3px; }
+
+    /* ── SETTINGS FORM ── */
+    .settings-table { width: 100%; border-collapse: collapse; }
+    .settings-table tr td { padding: 8px 0; vertical-align: middle; border-bottom: 1px solid #f2f2f2; }
+    .settings-table tr:last-child td { border-bottom: none; }
+    .settings-table tr td:first-child { width: 200px; color: #555; padding-right: 14px; }
+    select, input[type="text"] {
+      border: 1px solid #ccc;
+      padding: 5px 8px;
+      font-size: 13px;
+      color: #333;
+      background: #fff;
+      border-radius: 2px;
+    }
+    select:focus, input:focus { outline: none; border-color: #1867B8; }
+
+    .toggle-row { display: flex; align-items: center; gap: 10px; }
+    .toggle-label { font-size: 13px; }
+    .toggle-label.on { color: #2e7d32; font-weight: 600; }
+    .toggle-label.off { color: #888; }
+
+    .form-actions { margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px; }
+
+    /* ── RFM GRID ── */
+    .rfm-layout { display: flex; gap: 14px; }
+    .rfm-main { flex: 1; min-width: 0; }
+    .rfm-side { width: 210px; flex-shrink: 0; }
+
+    .rfm-table { width: 100%; border-collapse: collapse; }
+    .rfm-table .col-head {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 7px 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+    }
+    .rfm-table .row-head {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 8px 6px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: #555;
+      white-space: nowrap;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      width: 28px;
+    }
+    .rfm-cell {
+      border: 1px solid #ccc;
+      padding: 9px 10px;
+      vertical-align: top;
+      min-width: 110px;
+      position: relative;
+    }
+    .rfm-cell .cn { font-size: 11px; color: #888; margin-bottom: 3px; }
+    .rfm-cell .cp { font-size: 22px; font-weight: 700; line-height: 1.1; }
+    .rfm-cell .cs { font-size: 11px; color: #999; margin-top: 5px; display: flex; gap: 8px; }
+    .cp-new    { color: #2e7d32; }
+    .cp-loyal  { color: #1b5e20; }
+    .cp-random { color: #555; }
+    .cp-vague  { color: #f9a825; }
+    .cp-leaving{ color: #e65100; }
+    .cp-left   { color: #c62828; }
+    .cp-lost   { color: #888; }
+    .cp-zero   { color: #bbb; }
+
+    .ap-badge {
+      position: absolute;
+      top: 0; right: 0;
+      background: #1867B8;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 5px;
+      line-height: 14px;
+    }
+
+    /* ── ВИДЫ ГОСТЕЙ ── */
+    .gt-row {
+      display: flex;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    .gt-row:last-child { border-bottom: none; }
+    .gt-name { flex: 1; }
+    .gt-pct { font-weight: 700; min-width: 44px; text-align: right; margin-right: 8px; }
+    .gt-dots { color: #bbb; font-size: 15px; cursor: pointer; }
+
+    /* ── MONITORING ── */
+    .mon-stats { display: flex; gap: 12px; margin-bottom: 14px; }
+    .mon-box { flex: 1; background: #fff; border: 1px solid #ccc; padding: 14px 12px; text-align: center; }
+    .mon-val { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .mon-val.blue { color: #1867B8; }
+    .mon-val.green { color: #2e7d32; }
+    .mon-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    .mon-table { width: 100%; border-collapse: collapse; }
+    .mon-table th {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      text-align: left;
+    }
+    .mon-table td {
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .mon-table tfoot td {
+      background: #f5f5f5;
+      font-weight: 600;
+      border: 1px solid #ccc;
+    }
+
+    .filter-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .filter-label { font-size: 12px; color: #555; }
+
+    hr.divider { border: none; border-top: 1px solid #e0e0e0; margin: 14px 0; }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="topnav-logo">iiko</div>
+  <div class="topnav-item">Гостевая база</div>
+  <div class="topnav-item active">Лояльность</div>
+  <div class="topnav-item">Финансы</div>
+  <div class="topnav-item">Отчёты</div>
+  <div class="topnav-item">Настройки</div>
+  <div class="topnav-right">
+    <span>Ресторан «Берёзка»</span>
+    <span>👤 Администратор</span>
+  </div>
+</div>
+
+<div class="section-bar">
+  <span class="section-bar-title">Автопилоты удержания</span>
+  <span class="section-sep">|</span>
+  <span>Лояльность → Удержание</span>
+  <span class="section-info">47 уходящих · 168 000 ₽/мес</span>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('rfm', this)">RFM-отчёт</button>
+  <button class="tab-btn" onclick="switchTab('ap', this)">Автопилоты</button>
+  <button class="tab-btn" onclick="switchTab('mon', this)">Мониторинг</button>
+</div>
+
+<div class="content">
+
+  <!-- ══════════════════════════════
+       TAB 1: RFM
+  ══════════════════════════════ -->
+  <div class="tab-pane active" id="tab-rfm">
+    <div class="rfm-layout">
+      <div class="rfm-main">
+        <div class="panel">
+          <div class="panel-head">Были в вашем заведении</div>
+          <table class="rfm-table">
+            <thead>
+              <tr>
+                <th class="col-head" style="width:28px;"></th>
+                <th class="col-head">менее 1 месяца</th>
+                <th class="col-head">от 1 до 3 месяцев</th>
+                <th class="col-head">от 3 до 5 месяцев</th>
+                <th class="col-head">более 5 месяцев</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="row-head">1 заказ</td>
+                <td class="rfm-cell">
+                  <div class="cn">Новые</div><div class="cp cp-new">28,6%</div>
+                  <div class="cs"><span>👤 8</span><span>₽ 3 200</span></div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Случайные</div><div class="cp cp-zero">0,0%</div>
+                  <div class="cs"><span>👤 0</span><span>₽ 0</span></div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Случайные</div><div class="cp cp-zero">0,0%</div>
+                  <div class="cs"><span>👤 0</span><span>₽ 0</span></div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Потерянные</div><div class="cp cp-lost">17,9%</div>
+                  <div class="cs"><span>👤 5</span><span>₽ 2 100</span></div>
+                </td>
+              </tr>
+              <tr>
+                <td class="row-head">2–3 заказа</td>
+                <td class="rfm-cell">
+                  <div class="cn">Новые</div><div class="cp cp-new">14,3%</div>
+                  <div class="cs"><span>👤 4</span><span>₽ 5 400</span></div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Не определившиеся</div><div class="cp cp-vague">3,6%</div>
+                  <div class="cs"><span>👤 1</span><span>₽ 890</span></div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Ушедшие</div><div class="cp cp-zero">0,0%</div>
+                  <div class="cs"><span>👤 0</span><span>₽ 0</span></div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Потерянные</div><div class="cp cp-lost">7,1%</div>
+                  <div class="cs"><span>👤 2</span><span>₽ 1 800</span></div>
+                </td>
+              </tr>
+              <tr>
+                <td class="row-head">4–9 заказов</td>
+                <td class="rfm-cell">
+                  <div class="cn">Лояльные</div><div class="cp cp-loyal">10,7%</div>
+                  <div class="cs"><span>👤 3</span><span>₽ 12 400</span></div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Уходящие</div><div class="cp cp-leaving">7,1%</div>
+                  <div class="cs"><span>👤 2</span><span>₽ 4 200</span></div>
+                  <div class="ap-badge">✦ автопилот</div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Ушедшие</div><div class="cp cp-left">3,6%</div>
+                  <div class="cs"><span>👤 1</span><span>₽ 2 600</span></div>
+                  <div class="ap-badge">✦ автопилот</div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Потерянные</div><div class="cp cp-lost">7,1%</div>
+                  <div class="cs"><span>👤 2</span><span>₽ 4 800</span></div>
+                </td>
+              </tr>
+              <tr>
+                <td class="row-head">10+ заказов</td>
+                <td class="rfm-cell">
+                  <div class="cn">Лояльные</div><div class="cp cp-loyal">3,6%</div>
+                  <div class="cs"><span>👤 1</span><span>₽ 8 500</span></div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Уходящие</div><div class="cp cp-leaving">3,6%</div>
+                  <div class="cs"><span>👤 1</span><span>₽ 3 800</span></div>
+                  <div class="ap-badge">✦ автопилот</div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Ушедшие</div><div class="cp cp-left">0,0%</div>
+                  <div class="cs"><span>👤 0</span><span>₽ 0</span></div>
+                </td>
+                <td class="rfm-cell">
+                  <div class="cn">Потерянные</div><div class="cp cp-lost">3,6%</div>
+                  <div class="cs"><span>👤 1</span><span>₽ 5 200</span></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="rfm-side">
+        <div class="panel">
+          <div class="panel-head">Виды гостей</div>
+          <div class="panel-body" style="padding:8px 14px;">
+            <div class="gt-row"><span class="gt-name">Новые</span><span class="gt-pct" style="color:#2e7d32;">42,9%</span><span class="gt-dots">⋮</span></div>
+            <div class="gt-row"><span class="gt-name">Лояльные</span><span class="gt-pct" style="color:#1b5e20;">14,3%</span><span class="gt-dots">⋮</span></div>
+            <div class="gt-row"><span class="gt-name">Случайные</span><span class="gt-pct" style="color:#888;">0%</span><span class="gt-dots">⋮</span></div>
+            <div class="gt-row"><span class="gt-name">Не определившиеся</span><span class="gt-pct" style="color:#f9a825;">3,6%</span><span class="gt-dots">⋮</span></div>
+            <div class="gt-row"><span class="gt-name">Уходящие</span><span class="gt-pct" style="color:#e65100;">10,7%</span><span class="gt-dots">⋮</span></div>
+            <div class="gt-row"><span class="gt-name">Ушедшие</span><span class="gt-pct" style="color:#c62828;">3,6%</span><span class="gt-dots">⋮</span></div>
+            <div class="gt-row"><span class="gt-name">Потерянные</span><span class="gt-pct" style="color:#888;">35,7%</span><span class="gt-dots">⋮</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       TAB 2: AUTOPILOTS
+  ══════════════════════════════ -->
+  <div class="tab-pane" id="tab-ap">
+
+    <!-- LIST -->
+    <div id="ap-list">
+      <div class="toolbar">
+        <span class="toolbar-title">Автопилоты</span>
+        <button class="btn btn-create" onclick="showForm('new')">+ Создать автопилот</button>
+      </div>
+      <div class="panel">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th>Название</th>
+              <th>Триггер</th>
+              <th>Сегмент</th>
+              <th>Оффер</th>
+              <th>Каналы</th>
+              <th>Статус</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="ap-name-link" onclick="showForm('edit')">Возврат затухающих</span></td>
+              <td>Частота упала в 2 раза</td>
+              <td>Уходящие</td>
+              <td>Бонус на любимое блюдо</td>
+              <td>
+                <div class="ch-row">
+                  <span class="ch ch-push">push</span>
+                  <span class="ch-arrow">→</span>
+                  <span class="ch ch-tg">TG</span>
+                  <span class="ch-arrow">→</span>
+                  <span class="ch ch-sms">SMS</span>
+                </div>
+              </td>
+              <td><div class="status-on"><div class="status-dot-on"></div>Активен</div></td>
+              <td style="white-space:nowrap;">
+                <div class="toggle on" id="tgl-1" onclick="toggleMain()"></div>
+                &nbsp;
+                <button class="btn btn-edit" onclick="showForm('edit')">Редактировать</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FORM (edit or create) -->
+    <div id="ap-form" style="display:none;">
+      <button class="btn-back" onclick="showList()">← Назад к списку</button>
+      <div class="panel">
+        <div class="panel-head">
+          <span id="form-title">Возврат затухающих</span>
+          <div class="toggle-row">
+            <div class="toggle on" id="form-toggle" onclick="toggleFormStatus()"></div>
+            <span class="toggle-label on" id="form-status-label">Активен</span>
+          </div>
+        </div>
+        <div class="panel-body">
+
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:#888;margin-bottom:10px;">Правило</div>
+          <table class="rule-table" style="margin-bottom:14px;">
+            <thead>
+              <tr>
+                <th style="width:50%;">Условие</th>
+                <th style="width:50%;">Действие</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="rule-cell">
+                    <span id="rule-condition">Частота визитов гостя упала в 2 раза от его нормы</span>
+                    <div class="rule-icon-row">
+                      <div class="rule-icon">✎</div>
+                      <div class="rule-icon">🗑</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="rule-cell">
+                    <span id="rule-action">Начислить бонус и отправить уведомление</span>
+                    <div class="rule-icon-row">
+                      <div class="rule-icon">✎</div>
+                      <div class="rule-icon">🗑</div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <hr class="divider">
+
+          <table class="settings-table">
+            <tr>
+              <td>Название</td>
+              <td><input type="text" id="f-name" style="min-width:280px;" /></td>
+            </tr>
+            <tr>
+              <td>Сегмент</td>
+              <td>
+                <select id="f-segment">
+                  <option>Уходящие</option>
+                  <option>Уходящие + ушедшие</option>
+                  <option>Ушедшие</option>
+                  <option>Все гости</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td>Оффер</td>
+              <td>
+                <select id="f-offer">
+                  <option>Бонус на любимое блюдо</option>
+                  <option>Фикс. бонус 300 ₽</option>
+                  <option>Фикс. бонус 500 ₽</option>
+                  <option>Без бонуса (только уведомление)</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td>Каналы</td>
+              <td>
+                <select id="f-channel">
+                  <option>push → Telegram → SMS</option>
+                  <option>push</option>
+                  <option>push → SMS</option>
+                  <option>Telegram</option>
+                  <option>SMS</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td>Лимит бюджета</td>
+              <td><input type="text" id="f-budget" style="min-width:160px;" /></td>
+            </tr>
+            <tr>
+              <td>Пауза между офферами</td>
+              <td>
+                <select>
+                  <option>30 дней</option>
+                  <option>14 дней</option>
+                  <option>60 дней</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td>Контрольная группа</td>
+              <td>
+                <select>
+                  <option>10%</option>
+                  <option>20%</option>
+                  <option>Без контрольной группы</option>
+                </select>
+              </td>
+            </tr>
+          </table>
+
+          <div class="form-actions">
+            <button class="btn btn-save" onclick="showList()">✓ Сохранить</button>
+            <button class="btn btn-cancel" onclick="showList()">Отмена</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════
+       TAB 3: MONITORING
+  ══════════════════════════════ -->
+  <div class="tab-pane" id="tab-mon">
+
+    <div class="filter-row">
+      <span class="filter-label">Автопилот: <strong>Возврат затухающих</strong></span>
+      <span class="filter-label" style="margin-left:12px;">Период:</span>
+      <select>
+        <option>Июнь 2026</option>
+        <option>Май 2026</option>
+        <option>Апрель 2026</option>
+      </select>
+    </div>
+
+    <!-- Stats boxes -->
+    <div class="mon-stats" id="mon-boxes">
+      <div class="mon-box"><div class="mon-val blue" id="m-sent">31</div><div class="mon-label">Отправлено</div></div>
+      <div class="mon-box"><div class="mon-val" style="color:#555;" id="m-open">22</div><div class="mon-label">Открыли</div></div>
+      <div class="mon-box"><div class="mon-val green" id="m-ret">8</div><div class="mon-label">Вернулись</div></div>
+      <div class="mon-box"><div class="mon-val green" id="m-rev">14 400 ₽</div><div class="mon-label">Выручка</div></div>
+      <div class="mon-box"><div class="mon-val" style="color:#2e7d32;font-size:22px;" id="m-roi">×5,5</div><div class="mon-label">ROI</div></div>
+    </div>
+
+    <!-- Weekly breakdown table -->
+    <div class="panel">
+      <div class="panel-head">Детализация по неделям</div>
+      <div class="panel-body" style="padding:0;">
+        <table class="mon-table" id="mon-table">
+          <thead>
+            <tr>
+              <th>Период</th>
+              <th>Отправлено</th>
+              <th>Открыли</th>
+              <th>Вернулись, тест</th>
+              <th>% тест</th>
+              <th>% контроль</th>
+              <th>Выручка</th>
+            </tr>
+          </thead>
+          <tbody id="mon-tbody">
+            <tr>
+              <td>02–08 июня</td><td>9</td><td>6</td><td>2</td>
+              <td style="color:#2e7d32;font-weight:600;">22,2%</td><td>5,0%</td><td>3 600 ₽</td>
+            </tr>
+            <tr>
+              <td>09–15 июня</td><td>11</td><td>8</td><td>3</td>
+              <td style="color:#2e7d32;font-weight:600;">27,3%</td><td>0%</td><td>5 400 ₽</td>
+            </tr>
+            <tr>
+              <td>16–22 июня</td><td>7</td><td>5</td><td>2</td>
+              <td style="color:#2e7d32;font-weight:600;">28,6%</td><td>10,0%</td><td>3 200 ₽</td>
+            </tr>
+            <tr>
+              <td>23–29 июня</td><td>4</td><td>3</td><td>1</td>
+              <td style="color:#2e7d32;font-weight:600;">25,0%</td><td>0%</td><td>2 200 ₽</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>Итого</td><td>31</td><td>22</td><td>8</td>
+              <td style="color:#2e7d32;">25,8%</td><td>4,8%</td><td>14 400 ₽</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">Затраты</div>
+      <div class="panel-body">
+        <table class="settings-table">
+          <tr>
+            <td style="color:#555;">Начислено бонусов</td><td>1 800 ₽</td>
+          </tr>
+          <tr>
+            <td style="color:#555;">Стоимость рассылки</td><td>420 ₽</td>
+          </tr>
+          <tr>
+            <td style="color:#555;">Итого затрат</td><td><strong>2 220 ₽</strong></td>
+          </tr>
+          <tr>
+            <td style="color:#555;">ROI</td>
+            <td><strong style="color:#2e7d32;font-size:15px;">×5,5</strong>
+              <span style="color:#999;font-size:12px;margin-left:8px;">(14 400 − 2 220) / 2 220</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function showList() {
+    document.getElementById('ap-list').style.display = '';
+    document.getElementById('ap-form').style.display = 'none';
+  }
+
+  function showForm(mode) {
+    document.getElementById('ap-list').style.display = 'none';
+    document.getElementById('ap-form').style.display = '';
+    const ft = document.getElementById('form-toggle');
+    const fl = document.getElementById('form-status-label');
+    if (mode === 'new') {
+      document.getElementById('form-title').textContent = 'Новый автопилот';
+      document.getElementById('f-name').value = '';
+      document.getElementById('f-budget').value = '';
+      document.getElementById('rule-condition').textContent = 'Задайте условие';
+      document.getElementById('rule-action').textContent = 'Задайте действие';
+      ft.className = 'toggle'; fl.textContent = 'Выключен'; fl.className = 'toggle-label off';
+    } else {
+      document.getElementById('form-title').textContent = 'Возврат затухающих';
+      document.getElementById('f-name').value = 'Возврат затухающих';
+      document.getElementById('f-budget').value = '20 000 ₽/мес';
+      document.getElementById('rule-condition').textContent = 'Частота визитов гостя упала в 2 раза от его нормы';
+      document.getElementById('rule-action').textContent = 'Начислить бонус и отправить уведомление';
+      ft.className = 'toggle on'; fl.textContent = 'Активен'; fl.className = 'toggle-label on';
+    }
+  }
+
+  function toggleFormStatus() {
+    const ft = document.getElementById('form-toggle');
+    const fl = document.getElementById('form-status-label');
+    ft.classList.toggle('on');
+    if (ft.classList.contains('on')) {
+      fl.textContent = 'Активен'; fl.className = 'toggle-label on';
+    } else {
+      fl.textContent = 'Выключен'; fl.className = 'toggle-label off';
+    }
+  }
+
+  function toggleMain() {
+    const t = document.getElementById('tgl-1');
+    t.classList.toggle('on');
+  }
+</script>
+
+</body>
+</html>
